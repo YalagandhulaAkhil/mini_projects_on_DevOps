@@ -75,9 +75,3 @@ jobs:
           echo "VPC ID: $VPC_ID"
           echo "Subnet ID: $SUBNET_ID"
           echo "Elastic IP: $ELASTIC_IP"
-
-      - name: Save Terraform Outputs as Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: terraform-outputs
-          path: terraform_output.txt
