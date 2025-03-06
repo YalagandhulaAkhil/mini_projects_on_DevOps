@@ -58,7 +58,7 @@ jobs:
       # Terraform Apply (Deploy the changes)
       - name: Terraform Apply
         run: terraform apply -auto-approve
- # Capture Terraform Output Variables
+      
       - name: Get Terraform Outputs
         id: tf_output
         run: |
@@ -68,7 +68,6 @@ jobs:
           echo "SUBNET_ID=$(terraform output -raw subnet_id)" >> $GITHUB_ENV
           echo "ELASTIC_IP=$(terraform output -raw elastic_ip)" >> $GITHUB_ENV
 
-      # Display Terraform Outputs in GitHub Actions Log
       - name: Display Terraform Outputs
         run: |
           echo "EC2 Instance ID: $INSTANCE_ID"
@@ -77,9 +76,8 @@ jobs:
           echo "Subnet ID: $SUBNET_ID"
           echo "Elastic IP: $ELASTIC_IP"
 
-      # Upload Terraform Outputs as GitHub Workflow Artifacts (Optional)
       - name: Save Terraform Outputs as Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: terraform-outputs
           path: terraform_output.txt
