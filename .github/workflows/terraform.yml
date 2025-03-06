@@ -62,11 +62,11 @@ jobs:
       - name: Get Terraform Outputs
         id: tf_output
         run: |
-          echo "INSTANCE_ID=$(terraform output -raw instance_id)" >> $GITHUB_ENV
-          echo "INSTANCE_PUBLIC_IP=$(terraform output -raw instance_public_ip)" >> $GITHUB_ENV
-          echo "VPC_ID=$(terraform output -raw vpc_id)" >> $GITHUB_ENV
-          echo "SUBNET_ID=$(terraform output -raw subnet_id)" >> $GITHUB_ENV
-          echo "ELASTIC_IP=$(terraform output -raw elastic_ip)" >> $GITHUB_ENV
+          echo "INSTANCE_ID=$(terraform output -json | jq -r '.instance_id.value')" >> $GITHUB_ENV
+          echo "INSTANCE_PUBLIC_IP=$(terraform output -json | jq -r '.instance_public_ip.value')" >> $GITHUB_ENV
+          echo "VPC_ID=$(terraform output -json | jq -r '.vpc_id.value')" >> $GITHUB_ENV
+          echo "SUBNET_ID=$(terraform output -json | jq -r '.subnet_id.value')" >> $GITHUB_ENV
+          echo "ELASTIC_IP=$(terraform output -json | jq -r '.elastic_ip.value')" >> $GITHUB_ENV
 
       - name: Display Terraform Outputs
         run: |
