@@ -99,6 +99,7 @@ resource "aws_instance" "ec2_instance" {
     yum update -y
     yum install -y ec2-instance-connect
     systemctl enable --now ec2-instance-connect
+    file("${path.module}/splunk-install.sh")
   EOF
 
   tags = {
