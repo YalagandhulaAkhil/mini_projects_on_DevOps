@@ -35,7 +35,7 @@ $SPLUNK_INSTALL_PATH add monitor /var/log -index $SPLUNK_INDEX -sourcetype ec2:s
 PRIVATE_IP=$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4 || echo "localhost")
 PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4 || echo "localhost")
 
-echo ""
+echo "Akhil"
 echo "✅ Splunk is installed and running!"
 echo "🌐 Access Splunk Web UI at:"
 echo "   http://${PRIVATE_IP}:8000 (private IP)"
