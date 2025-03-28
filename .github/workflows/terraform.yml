@@ -59,3 +59,46 @@ jobs:
       - name: Terraform Apply
         run: terraform apply -auto-approve
 
+- name: Install Splunk on EC2
+      env:
+        PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }} # Store your EC2 private key in GitHub Secrets
+      run: |
+        # Get the public IP of the EC2 instance from Terraform output
+        EC2_PUBLIC_IP=$(terraform output -raw ec2_public_ip)
+
+        # Install Splunk using bash inline script via SSH
+        echo "Installing Splunk on EC2 instance $EC2_PUBLIC_IP"
+
+        # Create a temporary SSH key file
+        echo "$PRIVATE_KEY" > private_key.pem
+        chmod 600 private_key.pem
+
+        # Install Splunk using SSH and bash inline script
+        ssh -o StrictHostKeyChecking=no -i private_key.pem ubuntu@$EC2_PUBLIC_IP << 'EOF'
+          # Update system
+          sudo apt-get update -y
+          sudo apt-get install -y wget
+
+          # Download Splunk (replace with your version)
+          SPLUNK_URL="https://download.splunk.com/products/splunk/releases/9.4.1/linux/splunk-9.4.1-e3bdab203ac8-linux-amd64.deb"
+          SPLUNK_DEB="splunk-9.4.1-e3bdab203ac8-linux-amd64.deb"
+          
+          # Download and install Splunk
+          wget -O $SPLUNK_DEB $SPLUNK_URL
+          sudo dpkg -i $SPLUNK_DEB
+
+          # Start Splunk and accept the license
+          sudo /opt/splunk/bin/splunk start --accept-license --answer-yes --no-prompt
+
+          # Enable Splunk to start on boot
+          sudo /opt/splunk/bin/splunk enable boot-start
+
+          # Create admin user and set password
+          sudo /opt/splunk/bin/splunk add user admin -password 'Plmokn@!13579' -role admin
+
+          # Restart Splunk to apply changes
+          sudo /opt/splunk/bin/splunk restart
+
+          echo "Splunk installation complete."
+        EOF
+
