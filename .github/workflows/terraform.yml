@@ -1,37 +1,32 @@
-# This is a basic workflow to help you get started with Actions
+name: Deploy EC2 and Install Splunk
 
-name: Terraform EC2 Deployment
-
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
-    branches: [ "main" ]
+    branches:
+      - main  # Trigger on pushing to the main branch
   pull_request:
-    branches: [ "main" ]
+    branches:
+      - main  # Trigger on pull request events targeting the main branch
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
+  deploy_and_install:
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
+      # Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-      # Runs a single command using the runners shell
+      # Setup Terraform
       - name: Setup Terraform
-        uses:  hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: lastest
+          terraform_version: latest
 
-       # Configure AWS Credentials
+      # Configure AWS Credentials
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -39,7 +34,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-        # Terraform Init
+      # Initialize Terraform
       - name: Initialize Terraform
         run: terraform init
 
@@ -59,46 +54,72 @@ jobs:
       - name: Terraform Apply
         run: terraform apply -auto-approve
 
-- name: Install Splunk on EC2
-      env:
-        PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }} # Store your EC2 private key in GitHub Secrets
-      run: |
-        # Get the public IP of the EC2 instance from Terraform output
-        instance_public_ip=$(terraform output -raw instance_public_ip)
+      # Get EC2 Instance Outputs
+      - name: Get EC2 Instance Outputs
+        id: get_outputs
+        run: |
+          # Fetch the outputs from Terraform
+          VPC_ID=$(terraform output -raw vpc_id)
+          SUBNET_ID=$(terraform output -raw subnet_id)
+          INSTANCE_ID=$(terraform output -raw instance_id)
+          INSTANCE_PUBLIC_IP=$(terraform output -raw instance_public_ip)
+          ELASTIC_IP=$(terraform output -raw elastic_ip)
 
-        # Install Splunk using bash inline script via SSH
-        echo "Installing Splunk on EC2 instance $EC2_PUBLIC_IP"
+          # Set environment variables for the next steps
+          echo "VPC_ID=$VPC_ID" >> $GITHUB_ENV
+          echo "SUBNET_ID=$SUBNET_ID" >> $GITHUB_ENV
+          echo "INSTANCE_ID=$INSTANCE_ID" >> $GITHUB_ENV
+          echo "INSTANCE_PUBLIC_IP=$INSTANCE_PUBLIC_IP" >> $GITHUB_ENV
+          echo "ELASTIC_IP=$ELASTIC_IP" >> $GITHUB_ENV
 
-        # Create a temporary SSH key file
-        echo "$PRIVATE_KEY" > private_key.pem
-        chmod 600 private_key.pem
+      # Install Splunk on EC2
+      - name: Install Splunk on EC2
+        env:
+          PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }} # Add your private key in GitHub Secrets
+        run: |
+          # Use the EC2 public IP from the previous step
+          EC2_PUBLIC_IP=$INSTANCE_PUBLIC_IP
 
-        # Install Splunk using SSH and bash inline script
-        ssh -o StrictHostKeyChecking=no -i private_key.pem ubuntu@$EC2_PUBLIC_IP << 'EOF'
-          # Update system
-          sudo apt-get update -y
-          sudo apt-get install -y wget
+          # Create temporary SSH key
+          echo "$PRIVATE_KEY" > private_key.pem
+          chmod 600 private_key.pem
 
-          # Download Splunk (replace with your version)
-          SPLUNK_URL="https://download.splunk.com/products/splunk/releases/9.4.1/linux/splunk-9.4.1-e3bdab203ac8-linux-amd64.deb"
-          SPLUNK_DEB="splunk-9.4.1-e3bdab203ac8-linux-amd64.deb"
-          
-          # Download and install Splunk
-          wget -O $SPLUNK_DEB $SPLUNK_URL
-          sudo dpkg -i $SPLUNK_DEB
+          # Install Splunk using SSH and bash inline script
+          ssh -o StrictHostKeyChecking=no -i private_key.pem ubuntu@$EC2_PUBLIC_IP << 'EOF'
+            # Update system
+            sudo apt-get update -y
+            sudo apt-get install -y wget
 
-          # Start Splunk and accept the license
-          sudo /opt/splunk/bin/splunk start --accept-license --answer-yes --no-prompt
+            # Download Splunk (replace with your version if necessary)
+            SPLUNK_URL="https://download.splunk.com/products/splunk/releases/9.4.1/linux/splunk-9.4.1-e3bdab203ac8-linux-amd64.deb"
+            SPLUNK_DEB="splunk-9.4.1-e3bdab203ac8-linux-amd64.deb"
 
-          # Enable Splunk to start on boot
-          sudo /opt/splunk/bin/splunk enable boot-start
+            # Download and install Splunk
+            wget -O $SPLUNK_DEB $SPLUNK_URL
+            sudo dpkg -i $SPLUNK_DEB
 
-          # Create admin user and set password
-          sudo /opt/splunk/bin/splunk add user admin -password 'Plmokn@!13579' -role admin
+            # Start Splunk and accept the license
+            sudo /opt/splunk/bin/splunk start --accept-license --answer-yes --no-prompt
 
-          # Restart Splunk to apply changes
-          sudo /opt/splunk/bin/splunk restart
+            # Enable Splunk to start on boot
+            sudo /opt/splunk/bin/splunk enable boot-start
 
-          echo "Splunk installation complete."
-        EOF
+            # Create admin user and set password
+            sudo /opt/splunk/bin/splunk add user admin -password 'Plmokn@!13579' -role admin
 
+            # Restart Splunk to apply changes
+            sudo /opt/splunk/bin/splunk restart
+
+            echo "Splunk installation complete."
+          EOF
+
+          echo "Splunk has been successfully installed on EC2 instance."
+
+      # Output the EC2 instance details
+      - name: Output EC2 Instance Details
+        run: |
+          echo "VPC ID: $VPC_ID"
+          echo "Subnet ID: $SUBNET_ID"
+          echo "Instance ID: $INSTANCE_ID"
+          echo "Instance Public IP: $INSTANCE_PUBLIC_IP"
+          echo "Elastic IP: $ELASTIC_IP"
