@@ -1,4 +1,4 @@
-name: Deploy EC2 and Install Splunk
+name: Deploy EC2 
 
 on:
   push:
