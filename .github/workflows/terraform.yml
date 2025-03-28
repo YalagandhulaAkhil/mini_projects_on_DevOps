@@ -54,24 +54,6 @@ jobs:
       - name: Terraform Apply
         run: terraform apply -auto-approve
 
-      # Get EC2 Instance Outputs
-      - name: Get EC2 Instance Outputs
-        id: get_outputs
-        run: |
-          # Fetch the outputs from Terraform
-          VPC_ID=$(terraform output -raw vpc_id)
-          SUBNET_ID=$(terraform output -raw subnet_id)
-          INSTANCE_ID=$(terraform output -raw instance_id)
-          INSTANCE_PUBLIC_IP=$(terraform output -raw instance_public_ip)
-          ELASTIC_IP=$(terraform output -raw elastic_ip)
-
-          # Set environment variables for the next steps
-          echo "VPC_ID=$VPC_ID" >> $GITHUB_ENV
-          echo "SUBNET_ID=$SUBNET_ID" >> $GITHUB_ENV
-          echo "INSTANCE_ID=$INSTANCE_ID" >> $GITHUB_ENV
-          echo "INSTANCE_PUBLIC_IP=$INSTANCE_PUBLIC_IP" >> $GITHUB_ENV
-          echo "ELASTIC_IP=$ELASTIC_IP" >> $GITHUB_ENV
-
       # Install Splunk on EC2
       - name: Install Splunk on EC2
         env:
@@ -112,14 +94,3 @@ jobs:
 
             echo "Splunk installation complete."
           EOF
-
-          echo "Splunk has been successfully installed on EC2 instance."
-
-      # Output the EC2 instance details
-      - name: Output EC2 Instance Details
-        run: |
-          echo "VPC ID: $VPC_ID"
-          echo "Subnet ID: $SUBNET_ID"
-          echo "Instance ID: $INSTANCE_ID"
-          echo "Instance Public IP: $INSTANCE_PUBLIC_IP"
-          echo "Elastic IP: $ELASTIC_IP"
