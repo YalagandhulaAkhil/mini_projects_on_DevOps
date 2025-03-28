@@ -1,46 +1,48 @@
 #!/bin/bash
-set -euo pipefail
 
-# Variables
-SPLUNK_RPM_URL='https://download.splunk.com/products/splunk/releases/9.1.2/linux/splunk-9.1.2.rpm'
-SPLUNK_RPM_FILE='splunk.rpm'
-SPLUNK_INSTALL_PATH='/opt/splunk/bin/splunk'
-SPLUNK_USER='admin'
-SPLUNK_PASS='changeme'
-SPLUNK_INDEX='ec2_logs'
-LOG_FILE="/var/log/splunk_free_install.log"
+# Make sure the script is run with root privileges
+if [[ $EUID -ne 0 ]]; then
+   echo "This script must be run as root" 
+   exit 1
+fi
 
-# Logging
-exec > >(tee -a $LOG_FILE) 2>&1
+# Splunk download URL (replace with your desired version if needed)
+SPLUNK_URL="https://download.splunk.com/products/splunk/releases/9.4.1/linux/splunk-9.4.1-e3bdab203ac8-linux-amd64.deb"
 
-echo "[*] Updating system..."
-sudo yum update -y
+# File name
+SPLUNK_DEB="splunk-9.4.1-e3bdab203ac8-linux-amd64.deb"
 
-echo "[*] Downloading Splunk Enterprise (Free version)..."
-wget -O $SPLUNK_RPM_FILE "$SPLUNK_RPM_URL"
+# Update the system
+echo "Updating the system..."
+sudo apt-get update -y
 
-echo "[*] Installing Splunk..."
-sudo rpm -i $SPLUNK_RPM_FILE
+# Install dependencies
+echo "Installing dependencies..."
+sudo apt-get install -y wget
 
-echo "[*] Starting Splunk with web interface..."
-$SPLUNK_INSTALL_PATH start --accept-license --answer-yes --no-prompt --seed-passwd $SPLUNK_PASS
-$SPLUNK_INSTALL_PATH enable boot-start
+# Download Splunk
+echo "Downloading Splunk from: $SPLUNK_URL"
+wget -O $SPLUNK_DEB $SPLUNK_URL
 
-echo "[*] Enabling receiving on port 9997 for forwarders..."
-$SPLUNK_INSTALL_PATH enable listen 9997 -auth $SPLUNK_USER:$SPLUNK_PASS
+# Install Splunk
+echo "Installing Splunk..."
+sudo dpkg -i $SPLUNK_DEB
 
-echo "[*] Adding log monitor for /var/log..."
-$SPLUNK_INSTALL_PATH add monitor /var/log -index $SPLUNK_INDEX -sourcetype ec2:syslog -auth $SPLUNK_USER:$SPLUNK_PASS
+# Start Splunk and accept the license
+echo "Starting Splunk and accepting the license..."
+sudo /opt/splunk/bin/splunk start --accept-license --answer-yes --no-prompt
 
-PRIVATE_IP=$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4 || echo "localhost")
-PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4 || echo "localhost")
+# Set Splunk to start on boot
+echo "Enabling Splunk to start on boot..."
+sudo /opt/splunk/bin/splunk enable boot-start
 
-echo "Akhil"
-echo "✅ Splunk is installed and running!"
-echo "🌐 Access Splunk Web UI at:"
-echo "   http://${PRIVATE_IP}:8000 (private IP)"
-echo "   http://${PUBLIC_IP}:8000 (public IP, make sure port 8000 is open in security group)"
-echo ""
-echo "🔐 Login with:"
-echo "   Username: admin"
-echo "   Password: $SPLUNK_PASS"
+# Create admin user and set password
+echo "Setting up the admin user and password..."
+sudo /opt/splunk/bin/splunk add user admin -password 'Plmokn@!13579' -role admin
+
+# Restart Splunk to apply changes
+echo "Restarting Splunk to apply changes..."
+sudo /opt/splunk/bin/splunk restart
+
+# Done
+echo "Splunk installation complete. You can access it at http://<your-ec2-public-ip>:8000"
