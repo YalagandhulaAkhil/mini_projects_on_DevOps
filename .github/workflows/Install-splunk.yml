@@ -33,7 +33,7 @@ jobs:
           chmod 600 $PRIVATE_KEY_PATH
 
           # Install Splunk using SSH and bash inline script
-          ssh -o StrictHostKeyChecking=no -i $PRIVATE_KEY_PATH ubuntu@$EC2_PUBLIC_IP << 'EOF'
+          ssh -v -o StrictHostKeyChecking=no -i $PRIVATE_KEY_PATH ubuntu@$EC2_PUBLIC_IP << 'EOF'
             # Update system
             sudo apt-get update -y
             sudo apt-get install -y wget
