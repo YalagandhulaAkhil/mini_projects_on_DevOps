@@ -20,7 +20,7 @@ jobs:
       - name: Set SSH private key
         run: |
           echo "${{ secrets.EC2_PRIVATE_KEY }}" > Aaa.pem
-          chmod 600 Aaa.pem
+          chmod 400 Aaa.pem
         shell: bash
 
       # Install Splunk on EC2 instance
@@ -34,9 +34,12 @@ jobs:
 
           # Install Splunk using SSH and bash inline script
           ssh -v -o StrictHostKeyChecking=no -i $PRIVATE_KEY_PATH ec2-user@$EC2_PUBLIC_IP << 'EOF'
+            # Switch to root user
+            sudo su -
+
             # Update system
-            sudo yum update -y
-            sudo yum install -y wget
+            yum update -y
+            yum install -y wget
 
             # Download Splunk RPM (replace with your version if necessary)
             SPLUNK_URL="https://download.splunk.com/products/splunk/releases/9.4.1/linux/splunk-9.4.1-7cc4e2d6f12a-linux-x86_64.rpm"
@@ -44,19 +47,19 @@ jobs:
 
             # Download and install Splunk RPM
             wget -O $SPLUNK_RPM $SPLUNK_URL
-            sudo rpm -ivh $SPLUNK_RPM
+            rpm -ivh $SPLUNK_RPM
 
             # Start Splunk and accept the license
-            sudo /opt/splunk/bin/splunk start --accept-license --answer-yes --no-prompt
+            /opt/splunk/bin/splunk start --accept-license --answer-yes --no-prompt
 
             # Enable Splunk to start on boot
-            sudo /opt/splunk/bin/splunk enable boot-start
+            /opt/splunk/bin/splunk enable boot-start
 
             # Create admin user and set password
-            sudo /opt/splunk/bin/splunk add user admin -password 'Plmokn@!13579' -role admin
+            /opt/splunk/bin/splunk add user admin -password 'Plmokn@!13579' -role admin
 
             # Restart Splunk to apply changes
-            sudo /opt/splunk/bin/splunk restart
+            /opt/splunk/bin/splunk restart
 
             echo "Splunk installation complete."
           EOF
