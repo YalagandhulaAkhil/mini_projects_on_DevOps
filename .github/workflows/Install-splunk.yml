@@ -30,7 +30,7 @@ jobs:
           PRIVATE_KEY_PATH: Aaa.pem
         run: |
           # Ensure the private key file is readable
-          chmod 600 $PRIVATE_KEY_PATH
+          chmod 400 $PRIVATE_KEY_PATH
 
           # Install Splunk using SSH and bash inline script
           ssh -v -o StrictHostKeyChecking=no -i $PRIVATE_KEY_PATH ubuntu@$EC2_PUBLIC_IP << 'EOF'
