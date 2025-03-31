@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      AWS_REGION: your-aws-region # e.g., us-east-1
+      AWS_REGION: us-east-1 # e.g., us-east-1
 
     steps:
       - name: Checkout Code
