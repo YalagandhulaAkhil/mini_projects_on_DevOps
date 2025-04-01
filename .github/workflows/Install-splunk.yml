@@ -19,15 +19,15 @@ jobs:
       # Set private key for SSH connection to EC2 instance
       - name: Set SSH private key
         run: |
-          echo "${{ secrets.EC2_PRIVATE_KEY }}" > Aaa.pem
-          chmod 400 Aaa.pem
+          echo "${{ secrets.EC2_PRIVATE_KEY }}" > AAA.pem
+          chmod 400 AAA.pem
         shell: bash
 
       # Install Splunk on EC2 instance
       - name: Install Splunk on EC2
         env:
           EC2_PUBLIC_IP: ${{ secrets.EC2_PUBLIC_IP }}  # Fetch EC2 public IP from GitHub secrets
-          PRIVATE_KEY_PATH: Aaa.pem
+          PRIVATE_KEY_PATH: AAA.pem
         run: |
           # Ensure the private key file is readable
           chmod 400 $PRIVATE_KEY_PATH
