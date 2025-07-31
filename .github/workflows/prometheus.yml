@@ -1,5 +1,15 @@
+global:
+  scrape_interval: 15s  # How frequently to scrape targets
+  evaluation_interval: 15s  # How frequently to evaluate rules
+
 scrape_configs:
-  - job_name: 'via-ngrok'
-    scheme: https
+  # Scrape Prometheus's own metrics
+  - job_name: 'prometheus'
     static_configs:
-      - targets: ['0d62c98bbf80.ngrok-free.app']  # forwards to your local target
+      - targets: ['localhost:9090']
+
+  # Scrape metrics from Pushgateway (running via ngrok)
+  - job_name: 'pushgateway'
+    scheme: https  # because ngrok uses HTTPS
+    static_configs:
+      - targets: ['0d62c98bbf80.ngrok-free.app']
