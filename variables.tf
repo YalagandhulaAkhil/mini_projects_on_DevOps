@@ -43,7 +43,7 @@ variable "instance_type" {
 variable "key_name" {
   description = "Name of the SSH key pair"
   type        = string
-  default     = "Aaa"
+  default     = "AAA"
 }
 
 variable "instance_name" {
